@@ -154,7 +154,7 @@
   .group-row:hover { background: var(--bg3); }
   .group-label { flex: 1; font-size: 15px; font-weight: 500; color: var(--text); }
   .group-count { font-size: 12px; color: var(--text3); }
-  .chevron { font-size: 10px; color: var(--text3); margin-left: 4px; transition: transform 0.2s; }
+  .chevron { font-size: 10px; color: var(--text3); margin-left: 4px; transition: transform 0.2s; display: inline-block; }
   .chevron.open { transform: rotate(180deg); }
   .group-children { background: var(--bg); border-bottom: 1px solid var(--border); }
   .group-child {
@@ -478,19 +478,20 @@ function render() {
           <span class="chevron ${expanded?'open'}">▼</span>
         </div>`;
         if (expanded) {
-          html += `<div class="group-children">`;
+          html += '<div class="group-children">';
           item.group.forEach((sub, i) => {
-            const sid = `${gid}-${i}`;
+            const sid = gid + '-' + i;
             const done = !!checks[sid];
-            html += `
-            <div class="group-child ${done?'done':''}" onclick="toggleCheck('${sid}')">
-              <div class="check-circle ${done?'checked':''}" style="width:18px;height:18px;${done?`background:${accent};border-color:${accent}`:''}">
-                ${done ? `<svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ''}
-              </div>
-              <span class="item-label">${sub}</span>
-            </div>`;
+            const doneClass = done ? 'done' : '';
+            const checkedClass = done ? 'checked' : '';
+            const circleStyle = done ? 'width:18px;height:18px;background:' + accent + ';border-color:' + accent : 'width:18px;height:18px;';
+            const checkSvg = done ? '<svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
+            html += '<div class="group-child ' + doneClass + '" onclick="toggleCheck(\'' + sid + '\')">';
+            html += '<div class="check-circle ' + checkedClass + '" style="' + circleStyle + '">' + checkSvg + '</div>';
+            html += '<span class="item-label">' + sub + '</span>';
+            html += '</div>';
           });
-          html += `</div>`;
+          html += '</div>';
         }
       } else {
         const done = !!checks[item.id];

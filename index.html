@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>Daily Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f11;
+    --bg2: #18181c;
+    --bg3: #222228;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0f0f0;
+    --text2: #888;
+    --text3: #555;
+    --amber: #e8a838;
+    --teal: #3a9e7e;
+    --purple: #8b7fd4;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 60px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Header */
+  .header {
+    padding: 56px 20px 24px;
+    background: linear-gradient(180deg, #1a1a22 0%, var(--bg) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 240px; height: 240px;
+    background: radial-gradient(circle, rgba(139,127,212,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .date-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 6px;
+  }
+  .greeting {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+
+  /* Progress card */
+  .progress-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .ring-wrap { position: relative; flex-shrink: 0; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--bg3); stroke-width: 4; }
+  .ring-fg { fill: none; stroke: var(--purple); stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 0.6s cubic-bezier(.4,0,.2,1); }
+  .ring-pct {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: var(--text);
+  }
+  .progress-info { flex: 1; }
+  .progress-main { font-size: 15px; font-weight: 500; color: var(--text); }
+  .progress-sub { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .edit-btn {
+    font-size: 12px; color: var(--text2);
+    background: none; border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 6px 12px;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .edit-btn:hover { color: var(--text); border-color: var(--border2); background: var(--bg3); }
+  .edit-btn.active { color: var(--text); border-color: var(--purple); }
+
+  /* Section */
+  .section { padding: 28px 20px 0; }
+  .section-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  }
+  .section-accent { width: 3px; height: 20px; border-radius: 2px; flex-shrink: 0; }
+  .section-label { font-size: 12px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text2); flex: 1; }
+  .section-count { font-size: 12px; color: var(--text3); }
+  .add-link { font-size: 12px; color: var(--text2); background: none; border: none; cursor: pointer; padding: 0; transition: color 0.15s; }
+  .add-link:hover { color: var(--text); }
+
+  /* Items */
+  .items-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .item-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.12s, opacity 0.2s;
+    user-select: none;
+  }
+  .item-row:last-child { border-bottom: none; }
+  .item-row:hover { background: var(--bg3); }
+  .item-row.done { opacity: 0.35; }
+
+  .check-circle {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1.5px solid var(--border2);
+    background: transparent; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .check-circle.checked { border-color: transparent; }
+  .check-circle svg { opacity: 0; transform: scale(0.5); transition: all 0.15s; }
+  .check-circle.checked svg { opacity: 1; transform: scale(1); }
+
+  .item-label { flex: 1; font-size: 15px; color: var(--text); transition: color 0.2s; }
+  .item-row.done .item-label { text-decoration: line-through; color: var(--text3); }
+
+  .remove-btn {
+    font-size: 14px; color: var(--text3); background: none; border: none;
+    cursor: pointer; padding: 2px 4px; border-radius: 4px;
+    transition: color 0.15s; line-height: 1;
+  }
+  .remove-btn:hover { color: #e05555; }
+
+  /* Group row */
+  .group-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 16px; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.12s;
+  }
+  .group-row:hover { background: var(--bg3); }
+  .group-label { flex: 1; font-size: 15px; font-weight: 500; color: var(--text); }
+  .group-count { font-size: 12px; color: var(--text3); }
+  .chevron { font-size: 10px; color: var(--text3); margin-left: 4px; transition: transform 0.2s; }
+  .chevron.open { transform: rotate(180deg); }
+  .group-children { background: var(--bg); border-bottom: 1px solid var(--border); }
+  .group-child {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 16px 11px 50px;
+    border-top: 1px solid var(--border);
+    cursor: pointer; transition: background 0.12s, opacity 0.2s;
+  }
+  .group-child:hover { background: var(--bg2); }
+  .group-child.done { opacity: 0.35; }
+  .group-child.done .item-label { text-decoration: line-through; color: var(--text3); }
+
+  /* Partial fill dot */
+  .partial-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* Add input */
+  .add-row { display: flex; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--border); }
+  .add-input {
+    flex: 1; font-size: 14px; padding: 8px 10px;
+    border-radius: var(--radius-sm); border: 1px solid var(--border2);
+    background: var(--bg3); color: var(--text); outline: none;
+    transition: border-color 0.15s;
+  }
+  .add-input:focus { border-color: var(--purple); }
+  .add-input::placeholder { color: var(--text3); }
+  .confirm-btn {
+    font-size: 13px; padding: 8px 14px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border2); background: none; color: var(--text);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .confirm-btn:hover { background: var(--bg3); }
+
+  /* Task list */
+  .task-section { padding: 28px 20px 0; }
+  .widget-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .widget-header {
+    display: flex; align-items: center; padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .widget-title { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text2); flex: 1; }
+  .widget-sub { font-size: 11px; color: var(--text3); margin-left: 8px; }
+
+  .task-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    transition: background 0.12s, opacity 0.2s;
+  }
+  .task-row:last-child { border-bottom: none; }
+  .task-row:hover { background: var(--bg3); }
+  .task-row.done { opacity: 0.35; }
+
+  .drag-handle { cursor: grab; display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; padding: 2px; }
+  .drag-handle span { display: block; width: 14px; height: 1.5px; background: var(--text3); border-radius: 1px; }
+  .task-row.dragging { opacity: 0.4; background: var(--bg3); }
+
+  .num-badge {
+    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; transition: all 0.2s;
+  }
+  .num-badge.top { background: var(--purple); color: #fff; }
+  .num-badge.rest { background: var(--bg3); color: var(--text3); }
+
+  .task-label { flex: 1; font-size: 14px; color: var(--text); cursor: pointer; }
+  .task-row.done .task-label { text-decoration: line-through; color: var(--text3); }
+
+  /* Weekly pills */
+  .pills-body { padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 13px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--bg);
+    cursor: pointer; transition: all 0.15s; font-size: 13px; color: var(--text);
+    user-select: none;
+  }
+  .pill:hover { border-color: var(--border2); background: var(--bg3); }
+  .pill.done { opacity: 0.4; background: var(--bg3); }
+  .pill.done .pill-label { text-decoration: line-through; color: var(--text3); }
+  .pill-check { font-size: 10px; color: var(--teal); }
+
+  /* Coming up */
+  .coming-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.12s, opacity 0.2s;
+  }
+  .coming-row:last-child { border-bottom: none; }
+  .coming-row:hover { background: var(--bg3); }
+  .coming-row.done { opacity: 0.35; }
+  .coming-title { font-size: 14px; font-weight: 500; color: var(--text); }
+  .coming-row.done .coming-title { text-decoration: line-through; }
+  .coming-note { font-size: 12px; color: var(--text2); margin-top: 3px; line-height: 1.5; }
+
+  .small-circle {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 1.5px solid var(--border2); background: transparent;
+    flex-shrink: 0; margin-top: 2px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .small-circle.done { background: var(--bg3); border-color: var(--text3); }
+
+  /* Add area */
+  .add-area { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+
+  /* Reset */
+  .reset-btn {
+    font-size: 12px; color: #e05555; background: none;
+    border: 1px solid rgba(224,85,85,0.3); border-radius: var(--radius-sm);
+    padding: 6px 12px; cursor: pointer; transition: all 0.15s;
+  }
+  .reset-btn:hover { background: rgba(224,85,85,0.1); }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .items-card, .widget-card { animation: fadeIn 0.3s ease both; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+const KEYS = {
+  checks: 'dd_checks', wChecks: 'dd_wchecks', items: 'dd_items',
+  wItems: 'dd_witems', bp: 'dd_bp', tasks: 'dd_tasks',
+  lastReset: 'dd_lastreset', weekReset: 'dd_weekreset'
+};
+
+const DEFAULT_ITEMS = {
+  am: [
+    { id:'am-0', label:'Up by 6:30' },
+    { id:'am-meds', label:'Meds', group:['Bupropion','Minoxidil','Microdose'] },
+    { id:'am-1', label:'Stretch' },
+    { id:'am-2', label:'Coffee' },
+    { id:'am-3', label:'Smoothie/Brekky' },
+    { id:'am-4', label:'Hydrate' },
+    { id:'am-5', label:'Dishes' },
+    { id:'am-6', label:'Brush teeth' },
+    { id:'am-7', label:'Shower' },
+    { id:'am-cr', label:'Creatine' },
+    { id:'am-8', label:'Reading hour' },
+    { id:'am-9', label:'Family walk' },
+  ],
+  midday: [
+    { id:'mid-0', label:'Hydrate' },
+    { id:'mid-1', label:'Interaction with a rando' },
+    { id:'mid-2', label:'Give a compliment' },
+    { id:'mid-3', label:'Step outside' },
+    { id:'mid-4', label:'Walk around the block' },
+    { id:'mid-5', label:'Quick body scan / posture check' },
+    { id:'mid-6', label:"Text someone you've been meaning to check in on" },
+    { id:'mid-7', label:'Check in on your wife' },
+    { id:'mid-8', label:'Send one kind message' },
+    { id:'mid-9', label:'No-phone lunch' },
+    { id:'mid-10', label:'5 minutes of nothing' },
+    { id:'mid-11', label:"Write one thing you're grateful for" },
+    { id:'mid-12', label:'Tidy one thing' },
+    { id:'mid-13', label:'Drink a full glass of water' },
+    { id:'mid-14', label:'Review your PM list' },
+  ],
+  pm: [
+    { id:'pm-0', label:'PM stretch' },
+    { id:'pm-1', label:'Floss' },
+    { id:'pm-2', label:'Brush' },
+    { id:'pm-3', label:'Shower' },
+    { id:'pm-4', label:'Brush' },
+    { id:'pm-5', label:'Lotion' },
+    { id:'pm-6', label:'Marinate' },
+    { id:'pm-cr', label:'Creatine (loading — remove after week 1)' },
+    { id:'pm-7', label:'Restore hovel' },
+    { id:'pm-8', label:'Pick Hatch routine/alarm' },
+  ]
+};
+
+const DEFAULT_WEEKLY = ['Be in nature','Call someone','Volunteer','Craft time','Evening walk','Skate','Cut nails','Shaved','Serious bike ride'];
+
+const DEFAULT_TASKS = [
+  { id:'t1', label:'Do taxes', done:false },
+  { id:'t2', label:'Unpack Vegas', done:false },
+  { id:'t3', label:'Make bookshelf by bed make sense', done:false },
+  { id:'t4', label:'10 min in the study', done:false },
+  { id:'t5', label:'Clear hovel for Big Dog', done:false },
+  { id:'t6', label:'Bus Adventure', done:false },
+  { id:'t7', label:'Office work a fuera', done:false },
+  { id:'t8', label:'Call Duhanky / Phil / Morty', done:false },
+];
+
+const DEFAULT_BP = [{ id:1, title:'Duhanky wedding trip', note:'', done:false }];
+
+const SECTIONS = ['am','midday','pm'];
+const SEC_META = {
+  am:     { label:'Morning', accent:'#e8a838' },
+  midday: { label:'Midday',  accent:'#3a9e7e' },
+  pm:     { label:'Evening', accent:'#8b7fd4' },
+};
+
+function ld(k, fb) { try { const v = localStorage.getItem(k); return v !== null ? JSON.parse(v) : fb; } catch { return fb; } }
+function sv(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+
+function getResetKey() {
+  const d = new Date();
+  if (d.getHours() < 5) d.setDate(d.getDate() - 1);
+  return d.toDateString();
+}
+function getWeekKey() {
+  const d = new Date(), day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(new Date().setDate(diff)).toDateString();
+}
+
+// State
+let state = {
+  items: ld(KEYS.items, DEFAULT_ITEMS),
+  checks: {},
+  wItems: ld(KEYS.wItems, DEFAULT_WEEKLY),
+  wChecks: {},
+  bp: ld(KEYS.bp, DEFAULT_BP),
+  tasks: ld(KEYS.tasks, DEFAULT_TASKS),
+  editMode: false,
+  expandedGroups: {},
+  addingSection: null,
+  showAddWeekly: false,
+  showAddBP: false,
+  showAddTask: false,
+  dragIdx: null,
+};
+
+// Reset logic
+(function() {
+  const rk = getResetKey();
+  if (ld(KEYS.lastReset, null) !== rk) { sv(KEYS.checks, {}); sv(KEYS.lastReset, rk); }
+  else { state.checks = ld(KEYS.checks, {}); }
+  const wk = getWeekKey();
+  if (ld(KEYS.weekReset, null) !== wk) { sv(KEYS.wChecks, {}); sv(KEYS.weekReset, wk); }
+  else { state.wChecks = ld(KEYS.wChecks, {}); }
+})();
+
+function countItems(arr) { return arr.reduce((s,it) => s + (it.group ? it.group.length : 1), 0); }
+function countDone(arr, checks, sec) {
+  return arr.reduce((s,it) => {
+    if (it.group) return s + it.group.filter((_,i) => checks[`${sec}-${it.id}-${i}`]).length;
+    return s + (checks[it.id] ? 1 : 0);
+  }, 0);
+}
+
+function render() {
+  const { items, checks, wItems, wChecks, bp, tasks, editMode, expandedGroups, addingSection } = state;
+
+  const totalToday = SECTIONS.reduce((s,sec) => s + countItems(items[sec]), 0);
+  const doneToday = SECTIONS.reduce((s,sec) => s + countDone(items[sec], checks, sec), 0);
+  const wDone = wItems.filter((_,i) => wChecks[i]).length;
+  const pct = totalToday ? Math.round(doneToday / totalToday * 100) : 0;
+  const circ = 2 * Math.PI * 22;
+  const offset = circ * (1 - pct / 100);
+
+  const today = new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+
+  let html = `
+  <div class="header">
+    <div class="date-label">${today}</div>
+    <div class="greeting">Good day 👋</div>
+    <div class="progress-card">
+      <div class="ring-wrap">
+        <svg width="56" height="56" viewBox="0 0 56 56">
+          <circle class="ring-bg" cx="28" cy="28" r="22"/>
+          <circle class="ring-fg" cx="28" cy="28" r="22"
+            stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
+        </svg>
+        <div class="ring-pct">${pct}%</div>
+      </div>
+      <div class="progress-info">
+        <div class="progress-main">${doneToday} of ${totalToday} done today</div>
+        <div class="progress-sub">${wDone} of ${wItems.length} weekly intentions</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;margin-left:auto">
+        ${editMode ? `<button class="reset-btn" onclick="resetAll()">reset</button>` : ''}
+        <button class="edit-btn ${editMode ? 'active' : ''}" onclick="toggleEdit()">${editMode ? 'done' : 'edit'}</button>
+      </div>
+    </div>
+  </div>`;
+
+  // Daily sections
+  SECTIONS.forEach(sec => {
+    const { label, accent } = SEC_META[sec];
+    const secDone = countDone(items[sec], checks, sec);
+    const secTotal = countItems(items[sec]);
+    html += `
+    <div class="section">
+      <div class="section-header">
+        <div class="section-accent" style="background:${accent}"></div>
+        <span class="section-label">${label}</span>
+        <span class="section-count">${secDone}/${secTotal}</span>
+        ${editMode ? `<button class="add-link" style="margin-left:12px" onclick="toggleAddSection('${sec}')">${addingSection===sec?'cancel':'+ add'}</button>` : ''}
+      </div>
+      <div class="items-card">`;
+
+    items[sec].forEach((item, idx) => {
+      if (item.group) {
+        const gid = `${sec}-${item.id}`;
+        const expanded = !!expandedGroups[gid];
+        const gDone = item.group.filter((_,i) => checks[`${gid}-${i}`]).length;
+        const allDone = gDone === item.group.length;
+        html += `
+        <div class="group-row" onclick="toggleGroup('${gid}')">
+          <div class="check-circle ${allDone?'checked':''}" style="${allDone?`background:${accent};border-color:${accent}`:''}">
+            ${allDone
+              ? `<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+              : gDone > 0 ? `<div class="partial-dot" style="background:${accent}"></div>` : ''}
+          </div>
+          <span class="group-label">${item.label}</span>
+          <span class="group-count">${gDone}/${item.group.length}</span>
+          <span class="chevron ${expanded?'open'}">▼</span>
+        </div>`;
+        if (expanded) {
+          html += `<div class="group-children">`;
+          item.group.forEach((sub, i) => {
+            const sid = `${gid}-${i}`;
+            const done = !!checks[sid];
+            html += `
+            <div class="group-child ${done?'done':''}" onclick="toggleCheck('${sid}')">
+              <div class="check-circle ${done?'checked':''}" style="width:18px;height:18px;${done?`background:${accent};border-color:${accent}`:''}">
+                ${done ? `<svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ''}
+              </div>
+              <span class="item-label">${sub}</span>
+            </div>`;
+          });
+          html += `</div>`;
+        }
+      } else {
+        const done = !!checks[item.id];
+        html += `
+        <div class="item-row ${done?'done':''}" onclick="${editMode?'':'toggleCheck(\''+item.id+'\')'}">
+          <div class="check-circle ${done?'checked':''}" style="${done?`background:${accent};border-color:${accent}`:''}">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="item-label">${item.label}</span>
+          ${editMode ? `<button class="remove-btn" onclick="event.stopPropagation();removeItem('${sec}','${item.id}')">✕</button>` : ''}
+        </div>`;
+      }
+    });
+
+    if (editMode && addingSection === sec) {
+      html += `
+      <div class="add-row">
+        <input class="add-input" id="add-${sec}" placeholder="New item..." onkeydown="if(event.key==='Enter')addItem('${sec}')"/>
+        <button class="confirm-btn" onclick="addItem('${sec}')">Add</button>
+      </div>`;
+    }
+    html += `</div></div>`;
+  });
+
+  // This week's tasks
+  html += `
+  <div class="task-section">
+    <div class="section-header">
+      <div class="section-accent" style="background:var(--teal)"></div>
+      <span class="section-label">This week's tasks</span>
+      <span class="section-count" style="margin-left:auto;margin-right:8px">${tasks.filter(t=>t.done).length}/${tasks.length}</span>
+      <button class="add-link" onclick="toggleAddTask()">${state.showAddTask?'cancel':'+ add'}</button>
+    </div>
+    <div class="widget-card">
+      <div class="widget-header">
+        <span class="widget-title">drag to prioritize</span>
+      </div>`;
+
+  if (state.showAddTask) {
+    html += `
+    <div class="add-area">
+      <input class="add-input" id="add-task" placeholder="New task..." onkeydown="if(event.key==='Enter')addTask()"/>
+      <button class="confirm-btn" onclick="addTask()">Add</button>
+    </div>`;
+  }
+
+  tasks.forEach((task, i) => {
+    html += `
+    <div class="task-row ${task.done?'done':''}" draggable="true"
+      ondragstart="dragStart(${i})" ondragenter="dragEnter(${i})" ondragend="dragEnd()" ondragover="event.preventDefault()">
+      <div class="drag-handle"><span></span><span></span><span></span></div>
+      <div class="num-badge ${i===0?'top':'rest'}">${i+1}</div>
+      <span class="task-label" onclick="toggleTask('${task.id}')">${task.label}</span>
+      <button class="remove-btn" onclick="removeTask('${task.id}')">✕</button>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  // Weekly intentions
+  html += `
+  <div class="task-section">
+    <div class="section-header">
+      <div class="section-accent" style="background:var(--amber)"></div>
+      <span class="section-label">Weekly intentions</span>
+      <span class="section-count" style="margin-left:auto;margin-right:8px">${wDone}/${wItems.length}</span>
+      ${editMode ? `<button class="add-link" onclick="toggleAddWeekly()">${state.showAddWeekly?'cancel':'+ add'}</button>` : ''}
+    </div>
+    <div class="widget-card">
+      <div class="pills-body">`;
+
+  wItems.forEach((item, i) => {
+    const done = !!wChecks[i];
+    html += `
+    <div class="pill ${done?'done':''}" onclick="toggleWeekly(${i})">
+      ${done ? `<span class="pill-check">✓</span>` : ''}
+      <span class="pill-label">${item}</span>
+      ${editMode ? `<span onclick="event.stopPropagation();removeWeekly(${i})" style="font-size:12px;color:var(--text3);cursor:pointer;margin-left:2px">✕</span>` : ''}
+    </div>`;
+  });
+
+  if (editMode && state.showAddWeekly) {
+    html += `
+    <div style="display:flex;gap:8px;width:100%;margin-top:4px">
+      <input class="add-input" id="add-weekly" placeholder="Add intention..." onkeydown="if(event.key==='Enter')addWeekly()"/>
+      <button class="confirm-btn" onclick="addWeekly()">Add</button>
+    </div>`;
+  }
+  html += `</div></div></div>`;
+
+  // Coming up
+  html += `
+  <div class="task-section">
+    <div class="section-header">
+      <div class="section-accent" style="background:var(--purple)"></div>
+      <span class="section-label">Coming up</span>
+      <button class="add-link" style="margin-left:auto" onclick="toggleAddBP()">${state.showAddBP?'cancel':'+ add'}</button>
+    </div>
+    <div class="widget-card">`;
+
+  if (state.showAddBP) {
+    html += `
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px">
+      <input class="add-input" id="add-bp-title" placeholder="Event or task..."/>
+      <input class="add-input" id="add-bp-note" placeholder="Prep notes..." onkeydown="if(event.key==='Enter')addBP()"/>
+      <button class="confirm-btn" onclick="addBP()">Save</button>
+    </div>`;
+  }
+
+  if (!bp.length) html += `<div style="padding:14px 16px;font-size:13px;color:var(--text3)">Nothing added yet.</div>`;
+
+  bp.forEach(item => {
+    html += `
+    <div class="coming-row ${item.done?'done':''}" onclick="toggleBP(${item.id})">
+      <div class="small-circle ${item.done?'done':''}">
+        ${item.done ? `<svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="var(--text3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ''}
+      </div>
+      <div style="flex:1">
+        <div class="coming-title">${item.title}</div>
+        ${item.note && !item.done ? `<div class="coming-note">${item.note}</div>` : ''}
+      </div>
+      <button class="remove-btn" onclick="event.stopPropagation();removeBP(${item.id})">✕</button>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  document.getElementById('app').innerHTML = html;
+
+  // Focus add inputs after render
+  if (addingSection) { const el = document.getElementById(`add-${addingSection}`); if(el) el.focus(); }
+  if (state.showAddTask) { const el = document.getElementById('add-task'); if(el) el.focus(); }
+  if (state.showAddWeekly) { const el = document.getElementById('add-weekly'); if(el) el.focus(); }
+  if (state.showAddBP) { const el = document.getElementById('add-bp-title'); if(el) el.focus(); }
+}
+
+// Actions
+function toggleCheck(id) {
+  state.checks[id] = !state.checks[id];
+  sv(KEYS.checks, state.checks); render();
+}
+function toggleGroup(gid) {
+  state.expandedGroups[gid] = !state.expandedGroups[gid]; render();
+}
+function toggleEdit() { state.editMode = !state.editMode; state.addingSection = null; render(); }
+function toggleAddSection(sec) { state.addingSection = state.addingSection === sec ? null : sec; render(); }
+function toggleAddWeekly() { state.showAddWeekly = !state.showAddWeekly; render(); }
+function toggleAddBP() { state.showAddBP = !state.showAddBP; render(); }
+function toggleAddTask() { state.showAddTask = !state.showAddTask; render(); }
+
+function addItem(sec) {
+  const el = document.getElementById(`add-${sec}`);
+  const v = el ? el.value.trim() : '';
+  if (!v) return;
+  state.items[sec].push({ id: `${sec}-${Date.now()}`, label: v });
+  sv(KEYS.items, state.items); state.addingSection = null; render();
+}
+function removeItem(sec, id) {
+  state.items[sec] = state.items[sec].filter(it => it.id !== id);
+  sv(KEYS.items, state.items); render();
+}
+
+function toggleWeekly(i) {
+  state.wChecks[i] = !state.wChecks[i];
+  sv(KEYS.wChecks, state.wChecks); render();
+}
+function addWeekly() {
+  const el = document.getElementById('add-weekly');
+  const v = el ? el.value.trim() : '';
+  if (!v) return;
+  state.wItems.push(v); sv(KEYS.wItems, state.wItems);
+  state.showAddWeekly = false; render();
+}
+function removeWeekly(i) {
+  state.wItems.splice(i, 1); sv(KEYS.wItems, state.wItems); render();
+}
+
+function toggleTask(id) {
+  state.tasks = state.tasks.map(t => t.id === id ? { ...t, done: !t.done } : t);
+  sv(KEYS.tasks, state.tasks); render();
+}
+function addTask() {
+  const el = document.getElementById('add-task');
+  const v = el ? el.value.trim() : '';
+  if (!v) return;
+  state.tasks.push({ id: `t-${Date.now()}`, label: v, done: false });
+  sv(KEYS.tasks, state.tasks); state.showAddTask = false; render();
+}
+function removeTask(id) {
+  state.tasks = state.tasks.filter(t => t.id !== id);
+  sv(KEYS.tasks, state.tasks); render();
+}
+
+function toggleBP(id) {
+  state.bp = state.bp.map(i => i.id === id ? { ...i, done: !i.done } : i);
+  sv(KEYS.bp, state.bp); render();
+}
+function addBP() {
+  const title = (document.getElementById('add-bp-title') || {}).value?.trim();
+  const note = (document.getElementById('add-bp-note') || {}).value?.trim();
+  if (!title) return;
+  state.bp.push({ id: Date.now(), title, note: note || '', done: false });
+  sv(KEYS.bp, state.bp); state.showAddBP = false; render();
+}
+function removeBP(id) {
+  state.bp = state.bp.filter(i => i.id !== id);
+  sv(KEYS.bp, state.bp); render();
+}
+
+function resetAll() {
+  if (!confirm('Reset everything to defaults?')) return;
+  Object.values(KEYS).forEach(k => localStorage.removeItem(k));
+  location.reload();
+}
+
+// Drag
+let dragFrom = null;
+function dragStart(i) { dragFrom = i; }
+function dragEnter(i) {
+  if (dragFrom === null || dragFrom === i) return;
+  const arr = [...state.tasks];
+  const el = arr.splice(dragFrom, 1)[0];
+  arr.splice(i, 0, el);
+  dragFrom = i;
+  state.tasks = arr; render();
+}
+function dragEnd() { dragFrom = null; sv(KEYS.tasks, state.tasks); render(); }
+
+render();
+</script>
+</body>
+</html>

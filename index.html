@@ -3,720 +3,546 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <title>Daily Dashboard</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #0f0f11;
-    --bg2: #18181c;
-    --bg3: #222228;
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.13);
-    --text: #f0f0f0;
-    --text2: #888;
-    --text3: #555;
-    --amber: #e8a838;
-    --teal: #3a9e7e;
-    --purple: #8b7fd4;
-    --radius: 14px;
-    --radius-sm: 8px;
-  }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding-bottom: 60px;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  /* Header */
-  .header {
-    padding: 56px 20px 24px;
-    background: linear-gradient(180deg, #1a1a22 0%, var(--bg) 100%);
-    position: relative;
-    overflow: hidden;
-  }
-  .header::before {
-    content: '';
-    position: absolute;
-    top: -60px; right: -60px;
-    width: 240px; height: 240px;
-    background: radial-gradient(circle, rgba(139,127,212,0.12) 0%, transparent 70%);
-    pointer-events: none;
-  }
-  .date-label {
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text2);
-    margin-bottom: 6px;
-  }
-  .greeting {
-    font-size: 28px;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 20px;
-  }
-
-  /* Progress card */
-  .progress-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  .ring-wrap { position: relative; flex-shrink: 0; }
-  .ring-wrap svg { transform: rotate(-90deg); }
-  .ring-bg { fill: none; stroke: var(--bg3); stroke-width: 4; }
-  .ring-fg { fill: none; stroke: var(--purple); stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 0.6s cubic-bezier(.4,0,.2,1); }
-  .ring-pct {
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 600; color: var(--text);
-  }
-  .progress-info { flex: 1; }
-  .progress-main { font-size: 15px; font-weight: 500; color: var(--text); }
-  .progress-sub { font-size: 12px; color: var(--text2); margin-top: 3px; }
-  .edit-btn {
-    font-size: 12px; color: var(--text2);
-    background: none; border: 1px solid var(--border2);
-    border-radius: var(--radius-sm); padding: 6px 12px;
-    cursor: pointer; transition: all 0.15s; white-space: nowrap;
-  }
-  .edit-btn:hover { color: var(--text); border-color: var(--border2); background: var(--bg3); }
-  .edit-btn.active { color: var(--text); border-color: var(--purple); }
-
-  /* Section */
-  .section { padding: 28px 20px 0; }
-  .section-header {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
-  }
-  .section-accent { width: 3px; height: 20px; border-radius: 2px; flex-shrink: 0; }
-  .section-label { font-size: 12px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text2); flex: 1; }
-  .section-count { font-size: 12px; color: var(--text3); }
-  .add-link { font-size: 12px; color: var(--text2); background: none; border: none; cursor: pointer; padding: 0; transition: color 0.15s; }
-  .add-link:hover { color: var(--text); }
-
-  /* Items */
-  .items-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-  .item-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 13px 16px;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    transition: background 0.12s, opacity 0.2s;
-    user-select: none;
-  }
-  .item-row:last-child { border-bottom: none; }
-  .item-row:hover { background: var(--bg3); }
-  .item-row.done { opacity: 0.35; }
-
-  .check-circle {
-    width: 22px; height: 22px; border-radius: 50%;
-    border: 1.5px solid var(--border2);
-    background: transparent; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.15s;
-  }
-  .check-circle.checked { border-color: transparent; }
-  .check-circle svg { opacity: 0; transform: scale(0.5); transition: all 0.15s; }
-  .check-circle.checked svg { opacity: 1; transform: scale(1); }
-
-  .item-label { flex: 1; font-size: 15px; color: var(--text); transition: color 0.2s; }
-  .item-row.done .item-label { text-decoration: line-through; color: var(--text3); }
-
-  .remove-btn {
-    font-size: 14px; color: var(--text3); background: none; border: none;
-    cursor: pointer; padding: 2px 4px; border-radius: 4px;
-    transition: color 0.15s; line-height: 1;
-  }
-  .remove-btn:hover { color: #e05555; }
-
-  /* Group row */
-  .group-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 13px 16px; border-bottom: 1px solid var(--border);
-    cursor: pointer; transition: background 0.12s;
-  }
-  .group-row:hover { background: var(--bg3); }
-  .group-label { flex: 1; font-size: 15px; font-weight: 500; color: var(--text); }
-  .group-count { font-size: 12px; color: var(--text3); }
-  .chevron { font-size: 10px; color: var(--text3); margin-left: 4px; transition: transform 0.2s; display: inline-block; }
-  .chevron.open { transform: rotate(180deg); }
-  .group-children { background: var(--bg); border-bottom: 1px solid var(--border); }
-  .group-child {
-    display: flex; align-items: center; gap: 12px;
-    padding: 11px 16px 11px 50px;
-    border-top: 1px solid var(--border);
-    cursor: pointer; transition: background 0.12s, opacity 0.2s;
-  }
-  .group-child:hover { background: var(--bg2); }
-  .group-child.done { opacity: 0.35; }
-  .group-child.done .item-label { text-decoration: line-through; color: var(--text3); }
-
-  /* Partial fill dot */
-  .partial-dot { width: 8px; height: 8px; border-radius: 50%; }
-
-  /* Add input */
-  .add-row { display: flex; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--border); }
-  .add-input {
-    flex: 1; font-size: 14px; padding: 8px 10px;
-    border-radius: var(--radius-sm); border: 1px solid var(--border2);
-    background: var(--bg3); color: var(--text); outline: none;
-    transition: border-color 0.15s;
-  }
-  .add-input:focus { border-color: var(--purple); }
-  .add-input::placeholder { color: var(--text3); }
-  .confirm-btn {
-    font-size: 13px; padding: 8px 14px; border-radius: var(--radius-sm);
-    border: 1px solid var(--border2); background: none; color: var(--text);
-    cursor: pointer; transition: all 0.15s;
-  }
-  .confirm-btn:hover { background: var(--bg3); }
-
-  /* Task list */
-  .task-section { padding: 28px 20px 0; }
-  .widget-card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--radius); overflow: hidden;
-  }
-  .widget-header {
-    display: flex; align-items: center; padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
-  }
-  .widget-title { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text2); flex: 1; }
-  .widget-sub { font-size: 11px; color: var(--text3); margin-left: 8px; }
-
-  .task-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 12px 16px; border-bottom: 1px solid var(--border);
-    transition: background 0.12s, opacity 0.2s;
-  }
-  .task-row:last-child { border-bottom: none; }
-  .task-row:hover { background: var(--bg3); }
-  .task-row.done { opacity: 0.35; }
-
-  .drag-handle { cursor: grab; display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; padding: 2px; }
-  .drag-handle span { display: block; width: 14px; height: 1.5px; background: var(--text3); border-radius: 1px; }
-  .task-row.dragging { opacity: 0.4; background: var(--bg3); }
-
-  .num-badge {
-    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 600; transition: all 0.2s;
-  }
-  .num-badge.top { background: var(--purple); color: #fff; }
-  .num-badge.rest { background: var(--bg3); color: var(--text3); }
-
-  .task-label { flex: 1; font-size: 14px; color: var(--text); cursor: pointer; }
-  .task-row.done .task-label { text-decoration: line-through; color: var(--text3); }
-
-  /* Weekly pills */
-  .pills-body { padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 8px; }
-  .pill {
-    display: flex; align-items: center; gap: 6px;
-    padding: 7px 13px; border-radius: 999px;
-    border: 1px solid var(--border); background: var(--bg);
-    cursor: pointer; transition: all 0.15s; font-size: 13px; color: var(--text);
-    user-select: none;
-  }
-  .pill:hover { border-color: var(--border2); background: var(--bg3); }
-  .pill.done { opacity: 0.4; background: var(--bg3); }
-  .pill.done .pill-label { text-decoration: line-through; color: var(--text3); }
-  .pill-check { font-size: 10px; color: var(--teal); }
-
-  /* Coming up */
-  .coming-row {
-    display: flex; align-items: flex-start; gap: 12px;
-    padding: 12px 16px; border-bottom: 1px solid var(--border);
-    cursor: pointer; transition: background 0.12s, opacity 0.2s;
-  }
-  .coming-row:last-child { border-bottom: none; }
-  .coming-row:hover { background: var(--bg3); }
-  .coming-row.done { opacity: 0.35; }
-  .coming-title { font-size: 14px; font-weight: 500; color: var(--text); }
-  .coming-row.done .coming-title { text-decoration: line-through; }
-  .coming-note { font-size: 12px; color: var(--text2); margin-top: 3px; line-height: 1.5; }
-
-  .small-circle {
-    width: 18px; height: 18px; border-radius: 50%;
-    border: 1.5px solid var(--border2); background: transparent;
-    flex-shrink: 0; margin-top: 2px;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.15s;
-  }
-  .small-circle.done { background: var(--bg3); border-color: var(--text3); }
-
-  /* Add area */
-  .add-area { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
-
-  /* Reset */
-  .reset-btn {
-    font-size: 12px; color: #e05555; background: none;
-    border: 1px solid rgba(224,85,85,0.3); border-radius: var(--radius-sm);
-    padding: 6px 12px; cursor: pointer; transition: all 0.15s;
-  }
-  .reset-btn:hover { background: rgba(224,85,85,0.1); }
-
-  /* Animations */
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-  .items-card, .widget-card { animation: fadeIn 0.3s ease both; }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f11;--bg2:#18181c;--bg3:#222228;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#f0f0f0;--text2:#888;--text3:#555;
+  --amber:#e8a838;--teal:#3a9e7e;--purple:#8b7fd4;
+  --radius:14px;--radius-sm:8px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;-webkit-font-smoothing:antialiased;}
+.header{padding:56px 20px 24px;background:linear-gradient(180deg,#1a1a22 0%,var(--bg) 100%);}
+.date-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);margin-bottom:6px;}
+.greeting{font-size:28px;font-weight:600;color:var(--text);margin-bottom:20px;}
+.progress-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;align-items:center;gap:16px;}
+.ring-wrap{position:relative;flex-shrink:0;}
+.ring-wrap svg{display:block;}
+.ring-bg{fill:none;stroke:var(--bg3);stroke-width:4;}
+.ring-fg{fill:none;stroke:var(--purple);stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset 0.6s ease;}
+.ring-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--text);}
+.progress-info{flex:1;}
+.progress-main{font-size:15px;font-weight:500;color:var(--text);}
+.progress-sub{font-size:12px;color:var(--text2);margin-top:3px;}
+.btn-row{display:flex;gap:6px;align-items:center;margin-left:auto;}
+.edit-btn{font-size:12px;color:var(--text2);background:none;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:6px 12px;cursor:pointer;}
+.edit-btn.active{color:var(--text);border-color:var(--purple);}
+.reset-btn{font-size:12px;color:#e05555;background:none;border:1px solid rgba(224,85,85,0.3);border-radius:var(--radius-sm);padding:6px 12px;cursor:pointer;}
+.section{padding:28px 20px 0;}
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.section-accent{width:3px;height:20px;border-radius:2px;flex-shrink:0;}
+.section-label{font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text2);flex:1;}
+.section-count{font-size:12px;color:var(--text3);}
+.add-link{font-size:12px;color:var(--text2);background:none;border:none;cursor:pointer;padding:0;}
+.items-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.item-row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s,opacity .2s;user-select:none;}
+.item-row:last-child{border-bottom:none;}
+.item-row:hover{background:var(--bg3);}
+.item-row.done{opacity:.35;}
+.check-circle{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border2);background:transparent;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.item-label{flex:1;font-size:15px;color:var(--text);}
+.item-row.done .item-label{text-decoration:line-through;color:var(--text3);}
+.remove-btn{font-size:14px;color:var(--text3);background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:4px;}
+.remove-btn:hover{color:#e05555;}
+.group-row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;}
+.group-row:hover{background:var(--bg3);}
+.group-label{flex:1;font-size:15px;font-weight:500;color:var(--text);}
+.group-meta{font-size:12px;color:var(--text3);}
+.chevron{font-size:10px;color:var(--text3);margin-left:6px;display:inline-block;transition:transform .2s;}
+.group-children{background:var(--bg);border-bottom:1px solid var(--border);}
+.group-child{display:flex;align-items:center;gap:12px;padding:11px 16px 11px 50px;border-top:1px solid var(--border);cursor:pointer;transition:background .12s,opacity .2s;}
+.group-child:hover{background:var(--bg2);}
+.group-child.done{opacity:.35;}
+.group-child.done .item-label{text-decoration:line-through;color:var(--text3);}
+.add-row{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);}
+.add-input{flex:1;font-size:14px;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);outline:none;}
+.add-input:focus{border-color:var(--purple);}
+.add-input::placeholder{color:var(--text3);}
+.confirm-btn{font-size:13px;padding:8px 14px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:none;color:var(--text);cursor:pointer;}
+.widget-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.widget-header{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);}
+.widget-title{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);flex:1;}
+.task-row{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);transition:background .12s,opacity .2s;}
+.task-row:last-child{border-bottom:none;}
+.task-row:hover{background:var(--bg3);}
+.task-row.done{opacity:.35;}
+.drag-handle{cursor:grab;display:flex;flex-direction:column;gap:3px;flex-shrink:0;padding:2px;}
+.drag-handle span{display:block;width:14px;height:1.5px;background:var(--text3);border-radius:1px;}
+.num-badge{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;transition:all .2s;}
+.num-badge.top{background:var(--purple);color:#fff;}
+.num-badge.rest{background:var(--bg3);color:var(--text3);}
+.task-label{flex:1;font-size:14px;color:var(--text);cursor:pointer;}
+.task-row.done .task-label{text-decoration:line-through;color:var(--text3);}
+.pills-body{padding:14px 16px;display:flex;flex-wrap:wrap;gap:8px;}
+.pill{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all .15s;font-size:13px;color:var(--text);user-select:none;}
+.pill:hover{border-color:var(--border2);background:var(--bg3);}
+.pill.done{opacity:.4;background:var(--bg3);}
+.pill.done .pill-label{text-decoration:line-through;color:var(--text3);}
+.pill-check{font-size:10px;color:var(--teal);}
+.coming-row{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s,opacity .2s;}
+.coming-row:last-child{border-bottom:none;}
+.coming-row:hover{background:var(--bg3);}
+.coming-row.done{opacity:.35;}
+.coming-title{font-size:14px;font-weight:500;color:var(--text);}
+.coming-row.done .coming-title{text-decoration:line-through;}
+.coming-note{font-size:12px;color:var(--text2);margin-top:3px;line-height:1.5;}
+.small-circle{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border2);background:transparent;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.add-area{padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:8px;}
+.add-area .add-input{border-radius:var(--radius-sm);}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.items-card,.widget-card{animation:fadeIn .3s ease both;}
 </style>
 </head>
 <body>
-
 <div id="app"></div>
-
 <script>
-const KEYS = {
-  checks: 'dd_checks', wChecks: 'dd_wchecks', items: 'dd_items',
-  wItems: 'dd_witems', bp: 'dd_bp', tasks: 'dd_tasks',
-  lastReset: 'dd_lastreset', weekReset: 'dd_weekreset'
-};
+var KEYS={checks:'dd_checks',wChecks:'dd_wchecks',items:'dd_items',wItems:'dd_witems',bp:'dd_bp',tasks:'dd_tasks',lastReset:'dd_lastreset',weekReset:'dd_weekreset'};
 
-const DEFAULT_ITEMS = {
-  am: [
-    { id:'am-0', label:'Up by 6:30' },
-    { id:'am-meds', label:'Meds', group:['Bupropion','Minoxidil','Microdose'] },
-    { id:'am-1', label:'Stretch' },
-    { id:'am-2', label:'Coffee' },
-    { id:'am-3', label:'Smoothie/Brekky' },
-    { id:'am-4', label:'Hydrate' },
-    { id:'am-5', label:'Dishes' },
-    { id:'am-6', label:'Brush teeth' },
-    { id:'am-7', label:'Shower' },
-    { id:'am-cr', label:'Creatine' },
-    { id:'am-8', label:'Reading hour' },
-    { id:'am-9', label:'Family walk' },
+var DEFAULT_ITEMS={
+  am:[
+    {id:'am-0',label:'Up by 6:30'},
+    {id:'am-meds',label:'Meds',group:['Bupropion','Minoxidil','Microdose']},
+    {id:'am-1',label:'Stretch'},
+    {id:'am-2',label:'Coffee'},
+    {id:'am-3',label:'Smoothie/Brekky'},
+    {id:'am-4',label:'Hydrate'},
+    {id:'am-5',label:'Dishes'},
+    {id:'am-6',label:'Brush teeth'},
+    {id:'am-7',label:'Shower'},
+    {id:'am-cr',label:'Creatine'},
+    {id:'am-8',label:'Reading hour'},
+    {id:'am-9',label:'Family walk'}
   ],
-  midday: [
-    { id:'mid-0', label:'Hydrate' },
-    { id:'mid-1', label:'Interaction with a rando' },
-    { id:'mid-2', label:'Give a compliment' },
-    { id:'mid-3', label:'Step outside' },
-    { id:'mid-4', label:'Walk around the block' },
-    { id:'mid-5', label:'Quick body scan / posture check' },
-    { id:'mid-6', label:"Text someone you've been meaning to check in on" },
-    { id:'mid-7', label:'Check in on your wife' },
-    { id:'mid-8', label:'Send one kind message' },
-    { id:'mid-9', label:'No-phone lunch' },
-    { id:'mid-10', label:'5 minutes of nothing' },
-    { id:'mid-11', label:"Write one thing you're grateful for" },
-    { id:'mid-12', label:'Tidy one thing' },
-    { id:'mid-13', label:'Drink a full glass of water' },
-    { id:'mid-14', label:'Review your PM list' },
+  midday:[
+    {id:'mid-0',label:'Hydrate'},
+    {id:'mid-1',label:'Interaction with a rando'},
+    {id:'mid-2',label:'Give a compliment'},
+    {id:'mid-3',label:'Step outside'},
+    {id:'mid-4',label:'Walk around the block'},
+    {id:'mid-5',label:'Quick body scan / posture check'},
+    {id:'mid-6',label:'Text someone you\'ve been meaning to check in on'},
+    {id:'mid-7',label:'Check in on your wife'},
+    {id:'mid-8',label:'Send one kind message'},
+    {id:'mid-9',label:'No-phone lunch'},
+    {id:'mid-10',label:'5 minutes of nothing'},
+    {id:'mid-11',label:'Write one thing you\'re grateful for'},
+    {id:'mid-12',label:'Tidy one thing'},
+    {id:'mid-13',label:'Drink a full glass of water'},
+    {id:'mid-14',label:'Review your PM list'}
   ],
-  pm: [
-    { id:'pm-0', label:'PM stretch' },
-    { id:'pm-1', label:'Floss' },
-    { id:'pm-2', label:'Brush' },
-    { id:'pm-3', label:'Shower' },
-    { id:'pm-4', label:'Brush' },
-    { id:'pm-5', label:'Lotion' },
-    { id:'pm-6', label:'Marinate' },
-    { id:'pm-cr', label:'Creatine (loading — remove after week 1)' },
-    { id:'pm-7', label:'Restore hovel' },
-    { id:'pm-8', label:'Pick Hatch routine/alarm' },
+  pm:[
+    {id:'pm-0',label:'PM stretch'},
+    {id:'pm-1',label:'Floss'},
+    {id:'pm-2',label:'Brush'},
+    {id:'pm-3',label:'Shower'},
+    {id:'pm-4',label:'Brush'},
+    {id:'pm-5',label:'Lotion'},
+    {id:'pm-6',label:'Marinate'},
+    {id:'pm-cr',label:'Creatine (loading - remove after week 1)'},
+    {id:'pm-7',label:'Restore hovel'},
+    {id:'pm-8',label:'Pick Hatch routine/alarm'}
   ]
 };
 
-const DEFAULT_WEEKLY = ['Be in nature','Call someone','Volunteer','Craft time','Evening walk','Skate','Cut nails','Shaved','Serious bike ride'];
-
-const DEFAULT_TASKS = [
-  { id:'t1', label:'Do taxes', done:false },
-  { id:'t2', label:'Unpack Vegas', done:false },
-  { id:'t3', label:'Make bookshelf by bed make sense', done:false },
-  { id:'t4', label:'10 min in the study', done:false },
-  { id:'t5', label:'Clear hovel for Big Dog', done:false },
-  { id:'t6', label:'Bus Adventure', done:false },
-  { id:'t7', label:'Office work a fuera', done:false },
-  { id:'t8', label:'Call Duhanky / Phil / Morty', done:false },
+var DEFAULT_WEEKLY=['Be in nature','Call someone','Volunteer','Craft time','Evening walk','Skate','Cut nails','Shaved','Serious bike ride'];
+var DEFAULT_TASKS=[
+  {id:'t1',label:'Do taxes',done:false},
+  {id:'t2',label:'Unpack Vegas',done:false},
+  {id:'t3',label:'Make bookshelf by bed make sense',done:false},
+  {id:'t4',label:'10 min in the study',done:false},
+  {id:'t5',label:'Clear hovel for Big Dog',done:false},
+  {id:'t6',label:'Bus Adventure',done:false},
+  {id:'t7',label:'Office work a fuera',done:false},
+  {id:'t8',label:'Call Duhanky / Phil / Morty',done:false}
 ];
+var DEFAULT_BP=[{id:1,title:'Duhanky wedding trip',note:'',done:false}];
 
-const DEFAULT_BP = [{ id:1, title:'Duhanky wedding trip', note:'', done:false }];
-
-const SECTIONS = ['am','midday','pm'];
-const SEC_META = {
-  am:     { label:'Morning', accent:'#e8a838' },
-  midday: { label:'Midday',  accent:'#3a9e7e' },
-  pm:     { label:'Evening', accent:'#8b7fd4' },
+var SECTIONS=['am','midday','pm'];
+var SEC_META={
+  am:{label:'Morning',accent:'#e8a838'},
+  midday:{label:'Midday',accent:'#3a9e7e'},
+  pm:{label:'Evening',accent:'#8b7fd4'}
 };
 
-function ld(k, fb) { try { const v = localStorage.getItem(k); return v !== null ? JSON.parse(v) : fb; } catch { return fb; } }
-function sv(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+function ld(k,fb){try{var v=localStorage.getItem(k);return v!==null?JSON.parse(v):fb;}catch(e){return fb;}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 
-function getResetKey() {
-  const d = new Date();
-  if (d.getHours() < 5) d.setDate(d.getDate() - 1);
-  return d.toDateString();
-}
-function getWeekKey() {
-  const d = new Date(), day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(new Date().setDate(diff)).toDateString();
+function getResetKey(){var d=new Date();if(d.getHours()<5)d.setDate(d.getDate()-1);return d.toDateString();}
+function getWeekKey(){var d=new Date(),day=d.getDay(),diff=d.getDate()-day+(day===0?-6:1);return new Date(new Date().setDate(diff)).toDateString();}
+function countItems(arr){return arr.reduce(function(s,it){return s+(it.group?it.group.length:1);},0);}
+function countDone(arr,checks,sec){
+  return arr.reduce(function(s,it){
+    if(it.group)return s+it.group.filter(function(_,i){return checks[sec+'-'+it.id+'-'+i];}).length;
+    return s+(checks[it.id]?1:0);
+  },0);
 }
 
-// State
-let state = {
-  items: ld(KEYS.items, DEFAULT_ITEMS),
-  checks: {},
-  wItems: ld(KEYS.wItems, DEFAULT_WEEKLY),
-  wChecks: {},
-  bp: ld(KEYS.bp, DEFAULT_BP),
-  tasks: ld(KEYS.tasks, DEFAULT_TASKS),
-  editMode: false,
-  expandedGroups: {},
-  addingSection: null,
-  showAddWeekly: false,
-  showAddBP: false,
-  showAddTask: false,
-  dragIdx: null,
+function e(tag,attrs,children){
+  var el=document.createElement(tag);
+  if(attrs)Object.keys(attrs).forEach(function(k){
+    if(k==='style'&&typeof attrs[k]==='object'){Object.assign(el.style,attrs[k]);}
+    else if(k.startsWith('on')){el.addEventListener(k.slice(2).toLowerCase(),attrs[k]);}
+    else{el.setAttribute(k,attrs[k]);}
+  });
+  if(children)children.forEach(function(c){if(c)el.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return el;
+}
+
+var state={
+  items:ld(KEYS.items,DEFAULT_ITEMS),
+  checks:{},
+  wItems:ld(KEYS.wItems,DEFAULT_WEEKLY),
+  wChecks:{},
+  bp:ld(KEYS.bp,DEFAULT_BP),
+  tasks:ld(KEYS.tasks,DEFAULT_TASKS),
+  editMode:false,
+  expandedGroups:{},
+  addingSection:null,
+  showAddWeekly:false,
+  showAddBP:false,
+  showAddTask:false,
+  dragIdx:null
 };
 
-// Reset logic
-(function() {
-  const rk = getResetKey();
-  if (ld(KEYS.lastReset, null) !== rk) { sv(KEYS.checks, {}); sv(KEYS.lastReset, rk); }
-  else { state.checks = ld(KEYS.checks, {}); }
-  const wk = getWeekKey();
-  if (ld(KEYS.weekReset, null) !== wk) { sv(KEYS.wChecks, {}); sv(KEYS.weekReset, wk); }
-  else { state.wChecks = ld(KEYS.wChecks, {}); }
+(function(){
+  var rk=getResetKey();
+  if(ld(KEYS.lastReset,null)!==rk){sv(KEYS.checks,{});sv(KEYS.lastReset,rk);}
+  else{state.checks=ld(KEYS.checks,{});}
+  var wk=getWeekKey();
+  if(ld(KEYS.weekReset,null)!==wk){sv(KEYS.wChecks,{});sv(KEYS.weekReset,wk);}
+  else{state.wChecks=ld(KEYS.wChecks,{});}
 })();
 
-function countItems(arr) { return arr.reduce((s,it) => s + (it.group ? it.group.length : 1), 0); }
-function countDone(arr, checks, sec) {
-  return arr.reduce((s,it) => {
-    if (it.group) return s + it.group.filter((_,i) => checks[`${sec}-${it.id}-${i}`]).length;
-    return s + (checks[it.id] ? 1 : 0);
-  }, 0);
+function svgCheck(w,h,sw){
+  var s=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  s.setAttribute('width',w);s.setAttribute('height',h);s.setAttribute('viewBox','0 0 10 10');s.setAttribute('fill','none');
+  var p=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+  p.setAttribute('points','1.5,5 4,7.5 8.5,2.5');p.setAttribute('stroke','white');p.setAttribute('stroke-width',sw||'1.8');p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');
+  s.appendChild(p);return s;
 }
 
-function render() {
-  const { items, checks, wItems, wChecks, bp, tasks, editMode, expandedGroups, addingSection } = state;
+function makeCheckCircle(done,accent,size){
+  size=size||22;
+  var d=document.createElement('div');
+  d.className='check-circle'+(done?' checked':'');
+  d.style.width=size+'px';d.style.height=size+'px';
+  if(done){d.style.background=accent;d.style.borderColor=accent;d.appendChild(svgCheck(size===22?10:8,size===22?10:8,size===22?'1.8':'1.6'));}
+  return d;
+}
 
-  const totalToday = SECTIONS.reduce((s,sec) => s + countItems(items[sec]), 0);
-  const doneToday = SECTIONS.reduce((s,sec) => s + countDone(items[sec], checks, sec), 0);
-  const wDone = wItems.filter((_,i) => wChecks[i]).length;
-  const pct = totalToday ? Math.round(doneToday / totalToday * 100) : 0;
-  const circ = 2 * Math.PI * 22;
-  const offset = circ * (1 - pct / 100);
+function render(){
+  var root=document.getElementById('app');
+  root.innerHTML='';
 
-  const today = new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+  var s=state;
+  var totalToday=SECTIONS.reduce(function(a,sec){return a+countItems(s.items[sec]);},0);
+  var doneToday=SECTIONS.reduce(function(a,sec){return a+countDone(s.items[sec],s.checks,sec);},0);
+  var wDone=s.wItems.filter(function(_,i){return s.wChecks[i];}).length;
+  var pct=totalToday?Math.round(doneToday/totalToday*100):0;
+  var circ=2*Math.PI*22;
+  var offset=circ*(1-pct/100);
+  var today=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
 
-  let html = `
-  <div class="header">
-    <div class="date-label">${today}</div>
-    <div class="greeting">Good day 👋</div>
-    <div class="progress-card">
-      <div class="ring-wrap">
-        <svg width="56" height="56" viewBox="0 0 56 56">
-          <circle class="ring-bg" cx="28" cy="28" r="22"/>
-          <circle class="ring-fg" cx="28" cy="28" r="22"
-            stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
-        </svg>
-        <div class="ring-pct">${pct}%</div>
-      </div>
-      <div class="progress-info">
-        <div class="progress-main">${doneToday} of ${totalToday} done today</div>
-        <div class="progress-sub">${wDone} of ${wItems.length} weekly intentions</div>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center;margin-left:auto">
-        ${editMode ? `<button class="reset-btn" onclick="resetAll()">reset</button>` : ''}
-        <button class="edit-btn ${editMode ? 'active' : ''}" onclick="toggleEdit()">${editMode ? 'done' : 'edit'}</button>
-      </div>
-    </div>
-  </div>`;
+  // Header
+  var header=document.createElement('div');
+  header.className='header';
+
+  var dateEl=document.createElement('div');
+  dateEl.className='date-label';
+  dateEl.textContent=today;
+
+  var greet=document.createElement('div');
+  greet.className='greeting';
+  greet.textContent='Good day \uD83D\uDC4B';
+
+  // Progress card
+  var card=document.createElement('div');
+  card.className='progress-card';
+
+  var ringWrap=document.createElement('div');
+  ringWrap.className='ring-wrap';
+  var ns='http://www.w3.org/2000/svg';
+  var svg=document.createElementNS(ns,'svg');
+  svg.setAttribute('width','56');svg.setAttribute('height','56');svg.setAttribute('viewBox','0 0 56 56');
+  svg.style.transform='rotate(-90deg)';
+  var bg=document.createElementNS(ns,'circle');
+  bg.setAttribute('class','ring-bg');bg.setAttribute('cx','28');bg.setAttribute('cy','28');bg.setAttribute('r','22');
+  var fg=document.createElementNS(ns,'circle');
+  fg.setAttribute('class','ring-fg');fg.setAttribute('cx','28');fg.setAttribute('cy','28');fg.setAttribute('r','22');
+  fg.setAttribute('stroke-dasharray',circ);fg.setAttribute('stroke-dashoffset',offset);
+  svg.appendChild(bg);svg.appendChild(fg);
+  var pctEl=document.createElement('div');
+  pctEl.className='ring-pct';pctEl.textContent=pct+'%';
+  ringWrap.appendChild(svg);ringWrap.appendChild(pctEl);
+
+  var info=document.createElement('div');
+  info.className='progress-info';
+  var pm=document.createElement('div');pm.className='progress-main';pm.textContent=doneToday+' of '+totalToday+' done today';
+  var ps=document.createElement('div');ps.className='progress-sub';ps.textContent=wDone+' of '+s.wItems.length+' weekly intentions';
+  info.appendChild(pm);info.appendChild(ps);
+
+  var btnRow=document.createElement('div');btnRow.className='btn-row';
+  if(s.editMode){
+    var resetBtn=document.createElement('button');
+    resetBtn.className='reset-btn';resetBtn.textContent='reset';
+    resetBtn.addEventListener('click',function(){if(confirm('Reset everything to defaults?')){Object.values(KEYS).forEach(function(k){localStorage.removeItem(k);});location.reload();}});
+    btnRow.appendChild(resetBtn);
+  }
+  var editBtn=document.createElement('button');
+  editBtn.className='edit-btn'+(s.editMode?' active':'');
+  editBtn.textContent=s.editMode?'done':'edit';
+  editBtn.addEventListener('click',function(){s.editMode=!s.editMode;s.addingSection=null;render();});
+  btnRow.appendChild(editBtn);
+
+  card.appendChild(ringWrap);card.appendChild(info);card.appendChild(btnRow);
+  header.appendChild(dateEl);header.appendChild(greet);header.appendChild(card);
+  root.appendChild(header);
 
   // Daily sections
-  SECTIONS.forEach(sec => {
-    const { label, accent } = SEC_META[sec];
-    const secDone = countDone(items[sec], checks, sec);
-    const secTotal = countItems(items[sec]);
-    html += `
-    <div class="section">
-      <div class="section-header">
-        <div class="section-accent" style="background:${accent}"></div>
-        <span class="section-label">${label}</span>
-        <span class="section-count">${secDone}/${secTotal}</span>
-        ${editMode ? `<button class="add-link" style="margin-left:12px" onclick="toggleAddSection('${sec}')">${addingSection===sec?'cancel':'+ add'}</button>` : ''}
-      </div>
-      <div class="items-card">`;
+  SECTIONS.forEach(function(sec){
+    var meta=SEC_META[sec];
+    var secDone=countDone(s.items[sec],s.checks,sec);
+    var secTotal=countItems(s.items[sec]);
 
-    items[sec].forEach((item, idx) => {
-      if (item.group) {
-        const gid = `${sec}-${item.id}`;
-        const expanded = !!expandedGroups[gid];
-        const gDone = item.group.filter((_,i) => checks[`${gid}-${i}`]).length;
-        const allDone = gDone === item.group.length;
-        html += `
-        <div class="group-row" onclick="toggleGroup('${gid}')">
-          <div class="check-circle ${allDone?'checked':''}" style="${allDone?`background:${accent};border-color:${accent}`:''}">
-            ${allDone
-              ? `<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`
-              : gDone > 0 ? `<div class="partial-dot" style="background:${accent}"></div>` : ''}
-          </div>
-          <span class="group-label">${item.label}</span>
-          <span class="group-count">${gDone}/${item.group.length}</span>
-          <span class="chevron ${expanded?'open'}">▼</span>
-        </div>`;
-        if (expanded) {
-          html += '<div class="group-children">';
-          item.group.forEach((sub, i) => {
-            const sid = gid + '-' + i;
-            const done = !!checks[sid];
-            const doneClass = done ? 'done' : '';
-            const checkedClass = done ? 'checked' : '';
-            const circleStyle = done ? 'width:18px;height:18px;background:' + accent + ';border-color:' + accent : 'width:18px;height:18px;';
-            const checkSvg = done ? '<svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '';
-            html += '<div class="group-child ' + doneClass + '" onclick="toggleCheck(\'' + sid + '\')">';
-            html += '<div class="check-circle ' + checkedClass + '" style="' + circleStyle + '">' + checkSvg + '</div>';
-            html += '<span class="item-label">' + sub + '</span>';
-            html += '</div>';
+    var section=document.createElement('div');section.className='section';
+    var secHeader=document.createElement('div');secHeader.className='section-header';
+    var accent=document.createElement('div');accent.className='section-accent';accent.style.background=meta.accent;
+    var lbl=document.createElement('span');lbl.className='section-label';lbl.textContent=meta.label;
+    var cnt=document.createElement('span');cnt.className='section-count';cnt.textContent=secDone+'/'+secTotal;
+    secHeader.appendChild(accent);secHeader.appendChild(lbl);secHeader.appendChild(cnt);
+
+    if(s.editMode){
+      var addLnk=document.createElement('button');addLnk.className='add-link';addLnk.style.marginLeft='12px';
+      addLnk.textContent=s.addingSection===sec?'cancel':'+ add';
+      addLnk.addEventListener('click',(function(sec){return function(){s.addingSection=s.addingSection===sec?null:sec;render();};})(sec));
+      secHeader.appendChild(addLnk);
+    }
+    section.appendChild(secHeader);
+
+    var card2=document.createElement('div');card2.className='items-card';
+
+    s.items[sec].forEach(function(item){
+      if(item.group){
+        var gid=sec+'-'+item.id;
+        var expanded=!!s.expandedGroups[gid];
+        var gDone=item.group.filter(function(_,i){return s.checks[gid+'-'+i];}).length;
+        var allDone=gDone===item.group.length;
+
+        var grow=document.createElement('div');grow.className='group-row';
+        var gc=makeCheckCircle(allDone,meta.accent,22);
+        if(!allDone&&gDone>0){var dot=document.createElement('div');dot.style.cssText='width:8px;height:8px;border-radius:50%;background:'+meta.accent;gc.appendChild(dot);}
+        var glbl=document.createElement('span');glbl.className='group-label';glbl.textContent=item.label;
+        var gmeta2=document.createElement('span');gmeta2.className='group-meta';gmeta2.textContent=gDone+'/'+item.group.length;
+        var chev=document.createElement('span');chev.className='chevron'+(expanded?' open':'');chev.textContent='\u25BC';
+        grow.appendChild(gc);grow.appendChild(glbl);grow.appendChild(gmeta2);grow.appendChild(chev);
+        grow.addEventListener('click',(function(gid){return function(){s.expandedGroups[gid]=!s.expandedGroups[gid];render();};})(gid));
+        card2.appendChild(grow);
+
+        if(expanded){
+          var gchildren=document.createElement('div');gchildren.className='group-children';
+          item.group.forEach(function(sub,i){
+            var sid=gid+'-'+i;
+            var done2=!!s.checks[sid];
+            var gchild=document.createElement('div');gchild.className='group-child'+(done2?' done':'');
+            var gc2=makeCheckCircle(done2,meta.accent,18);
+            var slbl=document.createElement('span');slbl.className='item-label';slbl.textContent=sub;
+            gchild.appendChild(gc2);gchild.appendChild(slbl);
+            gchild.addEventListener('click',(function(sid){return function(){s.checks[sid]=!s.checks[sid];sv(KEYS.checks,s.checks);render();};})(sid));
+            gchildren.appendChild(gchild);
           });
-          html += '</div>';
+          card2.appendChild(gchildren);
         }
       } else {
-        const done = !!checks[item.id];
-        html += `
-        <div class="item-row ${done?'done':''}" onclick="${editMode?'':'toggleCheck(\''+item.id+'\')'}">
-          <div class="check-circle ${done?'checked':''}" style="${done?`background:${accent};border-color:${accent}`:''}">
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <span class="item-label">${item.label}</span>
-          ${editMode ? `<button class="remove-btn" onclick="event.stopPropagation();removeItem('${sec}','${item.id}')">✕</button>` : ''}
-        </div>`;
+        var done=!!s.checks[item.id];
+        var row=document.createElement('div');row.className='item-row'+(done?' done':'');
+        var cc=makeCheckCircle(done,meta.accent,22);
+        var ilbl=document.createElement('span');ilbl.className='item-label';ilbl.textContent=item.label;
+        row.appendChild(cc);row.appendChild(ilbl);
+        if(s.editMode){
+          var rb=document.createElement('button');rb.className='remove-btn';rb.textContent='\u2715';
+          rb.addEventListener('click',(function(sec,id){return function(ev){ev.stopPropagation();s.items[sec]=s.items[sec].filter(function(it){return it.id!==id;});sv(KEYS.items,s.items);render();};})(sec,item.id));
+          row.appendChild(rb);
+        } else {
+          row.addEventListener('click',(function(id){return function(){s.checks[id]=!s.checks[id];sv(KEYS.checks,s.checks);render();};})(item.id));
+        }
+        card2.appendChild(row);
       }
     });
 
-    if (editMode && addingSection === sec) {
-      html += `
-      <div class="add-row">
-        <input class="add-input" id="add-${sec}" placeholder="New item..." onkeydown="if(event.key==='Enter')addItem('${sec}')"/>
-        <button class="confirm-btn" onclick="addItem('${sec}')">Add</button>
-      </div>`;
+    if(s.editMode&&s.addingSection===sec){
+      var addRow=document.createElement('div');addRow.className='add-row';
+      var inp=document.createElement('input');inp.className='add-input';inp.placeholder='New item...';inp.id='add-'+sec;
+      var btn=document.createElement('button');btn.className='confirm-btn';btn.textContent='Add';
+      function doAdd(sec){
+        var el=document.getElementById('add-'+sec);
+        var v=el?el.value.trim():'';
+        if(!v)return;
+        s.items[sec].push({id:sec+'-'+Date.now(),label:v});
+        sv(KEYS.items,s.items);s.addingSection=null;render();
+      }
+      btn.addEventListener('click',(function(sec){return function(){doAdd(sec);};})(sec));
+      inp.addEventListener('keydown',(function(sec){return function(ev){if(ev.key==='Enter')doAdd(sec);};})(sec));
+      addRow.appendChild(inp);addRow.appendChild(btn);
+      card2.appendChild(addRow);
     }
-    html += `</div></div>`;
+
+    section.appendChild(card2);
+    root.appendChild(section);
   });
 
   // This week's tasks
-  html += `
-  <div class="task-section">
-    <div class="section-header">
-      <div class="section-accent" style="background:var(--teal)"></div>
-      <span class="section-label">This week's tasks</span>
-      <span class="section-count" style="margin-left:auto;margin-right:8px">${tasks.filter(t=>t.done).length}/${tasks.length}</span>
-      <button class="add-link" onclick="toggleAddTask()">${state.showAddTask?'cancel':'+ add'}</button>
-    </div>
-    <div class="widget-card">
-      <div class="widget-header">
-        <span class="widget-title">drag to prioritize</span>
-      </div>`;
+  var taskSection=document.createElement('div');taskSection.className='section';
+  var tsh=document.createElement('div');tsh.className='section-header';
+  var ta=document.createElement('div');ta.className='section-accent';ta.style.background='var(--teal)';
+  var tl=document.createElement('span');tl.className='section-label';tl.textContent="This week's tasks";
+  var tc=document.createElement('span');tc.className='section-count';tc.style.marginLeft='auto';tc.style.marginRight='8px';
+  tc.textContent=s.tasks.filter(function(t){return t.done;}).length+'/'+s.tasks.length;
+  var tal=document.createElement('button');tal.className='add-link';tal.textContent=s.showAddTask?'cancel':'+ add';
+  tal.addEventListener('click',function(){s.showAddTask=!s.showAddTask;render();});
+  tsh.appendChild(ta);tsh.appendChild(tl);tsh.appendChild(tc);tsh.appendChild(tal);
+  taskSection.appendChild(tsh);
 
-  if (state.showAddTask) {
-    html += `
-    <div class="add-area">
-      <input class="add-input" id="add-task" placeholder="New task..." onkeydown="if(event.key==='Enter')addTask()"/>
-      <button class="confirm-btn" onclick="addTask()">Add</button>
-    </div>`;
+  var twc=document.createElement('div');twc.className='widget-card';
+  var twh=document.createElement('div');twh.className='widget-header';
+  var twt=document.createElement('span');twt.className='widget-title';twt.textContent='drag to prioritize';
+  twh.appendChild(twt);twc.appendChild(twh);
+
+  if(s.showAddTask){
+    var taa=document.createElement('div');taa.className='add-area';
+    var tai=document.createElement('input');tai.className='add-input';tai.placeholder='New task...';tai.id='add-task';
+    var tab=document.createElement('button');tab.className='confirm-btn';tab.textContent='Add';
+    function doAddTask(){
+      var el=document.getElementById('add-task');
+      var v=el?el.value.trim():'';
+      if(!v)return;
+      s.tasks.push({id:'t-'+Date.now(),label:v,done:false});
+      sv(KEYS.tasks,s.tasks);s.showAddTask=false;render();
+    }
+    tab.addEventListener('click',doAddTask);
+    tai.addEventListener('keydown',function(ev){if(ev.key==='Enter')doAddTask();});
+    taa.appendChild(tai);taa.appendChild(tab);twc.appendChild(taa);
   }
 
-  tasks.forEach((task, i) => {
-    html += `
-    <div class="task-row ${task.done?'done':''}" draggable="true"
-      ondragstart="dragStart(${i})" ondragenter="dragEnter(${i})" ondragend="dragEnd()" ondragover="event.preventDefault()">
-      <div class="drag-handle"><span></span><span></span><span></span></div>
-      <div class="num-badge ${i===0?'top':'rest'}">${i+1}</div>
-      <span class="task-label" onclick="toggleTask('${task.id}')">${task.label}</span>
-      <button class="remove-btn" onclick="removeTask('${task.id}')">✕</button>
-    </div>`;
+  var dragFrom=null;
+  s.tasks.forEach(function(task,i){
+    var tr=document.createElement('div');tr.className='task-row'+(task.done?' done':'');
+    tr.setAttribute('draggable','true');
+    tr.addEventListener('dragstart',function(){dragFrom=i;tr.style.opacity='.4';});
+    tr.addEventListener('dragend',function(){dragFrom=null;tr.style.opacity='';sv(KEYS.tasks,s.tasks);render();});
+    tr.addEventListener('dragenter',function(){
+      if(dragFrom===null||dragFrom===i)return;
+      var arr=s.tasks.slice();var el=arr.splice(dragFrom,1)[0];arr.splice(i,0,el);
+      s.tasks=arr;dragFrom=i;render();
+    });
+    tr.addEventListener('dragover',function(ev){ev.preventDefault();});
+
+    var dh=document.createElement('div');dh.className='drag-handle';
+    for(var x=0;x<3;x++){var sp=document.createElement('span');dh.appendChild(sp);}
+    var nb=document.createElement('div');nb.className='num-badge '+(i===0?'top':'rest');nb.textContent=i+1;
+    var tklbl=document.createElement('span');tklbl.className='task-label';tklbl.textContent=task.label;
+    tklbl.addEventListener('click',(function(id){return function(){s.tasks=s.tasks.map(function(t){return t.id===id?Object.assign({},t,{done:!t.done}):t;});sv(KEYS.tasks,s.tasks);render();};})(task.id));
+    var trb=document.createElement('button');trb.className='remove-btn';trb.textContent='\u2715';
+    trb.addEventListener('click',(function(id){return function(){s.tasks=s.tasks.filter(function(t){return t.id!==id;});sv(KEYS.tasks,s.tasks);render();};})(task.id));
+    tr.appendChild(dh);tr.appendChild(nb);tr.appendChild(tklbl);tr.appendChild(trb);
+    twc.appendChild(tr);
   });
-  html += `</div></div>`;
+  taskSection.appendChild(twc);
+  root.appendChild(taskSection);
 
   // Weekly intentions
-  html += `
-  <div class="task-section">
-    <div class="section-header">
-      <div class="section-accent" style="background:var(--amber)"></div>
-      <span class="section-label">Weekly intentions</span>
-      <span class="section-count" style="margin-left:auto;margin-right:8px">${wDone}/${wItems.length}</span>
-      ${editMode ? `<button class="add-link" onclick="toggleAddWeekly()">${state.showAddWeekly?'cancel':'+ add'}</button>` : ''}
-    </div>
-    <div class="widget-card">
-      <div class="pills-body">`;
-
-  wItems.forEach((item, i) => {
-    const done = !!wChecks[i];
-    html += `
-    <div class="pill ${done?'done':''}" onclick="toggleWeekly(${i})">
-      ${done ? `<span class="pill-check">✓</span>` : ''}
-      <span class="pill-label">${item}</span>
-      ${editMode ? `<span onclick="event.stopPropagation();removeWeekly(${i})" style="font-size:12px;color:var(--text3);cursor:pointer;margin-left:2px">✕</span>` : ''}
-    </div>`;
-  });
-
-  if (editMode && state.showAddWeekly) {
-    html += `
-    <div style="display:flex;gap:8px;width:100%;margin-top:4px">
-      <input class="add-input" id="add-weekly" placeholder="Add intention..." onkeydown="if(event.key==='Enter')addWeekly()"/>
-      <button class="confirm-btn" onclick="addWeekly()">Add</button>
-    </div>`;
+  var wSection=document.createElement('div');wSection.className='section';
+  var wsh=document.createElement('div');wsh.className='section-header';
+  var wa=document.createElement('div');wa.className='section-accent';wa.style.background='var(--amber)';
+  var wl=document.createElement('span');wl.className='section-label';wl.textContent='Weekly intentions';
+  var wc=document.createElement('span');wc.className='section-count';wc.style.marginLeft='auto';wc.style.marginRight='8px';wc.textContent=wDone+'/'+s.wItems.length;
+  wsh.appendChild(wa);wsh.appendChild(wl);wsh.appendChild(wc);
+  if(s.editMode){
+    var wal=document.createElement('button');wal.className='add-link';wal.textContent=s.showAddWeekly?'cancel':'+ add';
+    wal.addEventListener('click',function(){s.showAddWeekly=!s.showAddWeekly;render();});
+    wsh.appendChild(wal);
   }
-  html += `</div></div></div>`;
+  wSection.appendChild(wsh);
+
+  var wwc=document.createElement('div');wwc.className='widget-card';
+  var pillsBody=document.createElement('div');pillsBody.className='pills-body';
+  s.wItems.forEach(function(item,i){
+    var done=!!s.wChecks[i];
+    var pill=document.createElement('div');pill.className='pill'+(done?' done':'');
+    if(done){var pc=document.createElement('span');pc.className='pill-check';pc.textContent='\u2713';pill.appendChild(pc);}
+    var plbl=document.createElement('span');plbl.className='pill-label';plbl.textContent=item;pill.appendChild(plbl);
+    if(s.editMode){
+      var prb=document.createElement('span');prb.style.cssText='font-size:12px;color:var(--text3);cursor:pointer;margin-left:4px;';prb.textContent='\u2715';
+      prb.addEventListener('click',(function(i){return function(ev){ev.stopPropagation();s.wItems.splice(i,1);sv(KEYS.wItems,s.wItems);render();};})(i));
+      pill.appendChild(prb);
+    }
+    pill.addEventListener('click',(function(i){return function(){s.wChecks[i]=!s.wChecks[i];sv(KEYS.wChecks,s.wChecks);render();};})(i));
+    pillsBody.appendChild(pill);
+  });
+  if(s.editMode&&s.showAddWeekly){
+    var wAddRow=document.createElement('div');wAddRow.style.cssText='display:flex;gap:8px;width:100%;margin-top:4px;';
+    var wai=document.createElement('input');wai.className='add-input';wai.placeholder='Add intention...';wai.id='add-weekly';wai.style.borderRadius='999px';
+    var wab=document.createElement('button');wab.className='confirm-btn';wab.textContent='Add';wab.style.borderRadius='999px';
+    function doAddWeekly(){var el=document.getElementById('add-weekly');var v=el?el.value.trim():'';if(!v)return;s.wItems.push(v);sv(KEYS.wItems,s.wItems);s.showAddWeekly=false;render();}
+    wab.addEventListener('click',doAddWeekly);
+    wai.addEventListener('keydown',function(ev){if(ev.key==='Enter')doAddWeekly();});
+    wAddRow.appendChild(wai);wAddRow.appendChild(wab);pillsBody.appendChild(wAddRow);
+  }
+  wwc.appendChild(pillsBody);wSection.appendChild(wwc);root.appendChild(wSection);
 
   // Coming up
-  html += `
-  <div class="task-section">
-    <div class="section-header">
-      <div class="section-accent" style="background:var(--purple)"></div>
-      <span class="section-label">Coming up</span>
-      <button class="add-link" style="margin-left:auto" onclick="toggleAddBP()">${state.showAddBP?'cancel':'+ add'}</button>
-    </div>
-    <div class="widget-card">`;
+  var bpSection=document.createElement('div');bpSection.className='section';
+  var bsh=document.createElement('div');bsh.className='section-header';
+  var bpa=document.createElement('div');bpa.className='section-accent';bpa.style.background='var(--purple)';
+  var bpl=document.createElement('span');bpl.className='section-label';bpl.textContent='Coming up';
+  var bpAdd=document.createElement('button');bpAdd.className='add-link';bpAdd.style.marginLeft='auto';bpAdd.textContent=s.showAddBP?'cancel':'+ add';
+  bpAdd.addEventListener('click',function(){s.showAddBP=!s.showAddBP;render();});
+  bsh.appendChild(bpa);bsh.appendChild(bpl);bsh.appendChild(bpAdd);
+  bpSection.appendChild(bsh);
 
-  if (state.showAddBP) {
-    html += `
-    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px">
-      <input class="add-input" id="add-bp-title" placeholder="Event or task..."/>
-      <input class="add-input" id="add-bp-note" placeholder="Prep notes..." onkeydown="if(event.key==='Enter')addBP()"/>
-      <button class="confirm-btn" onclick="addBP()">Save</button>
-    </div>`;
+  var bpwc=document.createElement('div');bpwc.className='widget-card';
+  if(s.showAddBP){
+    var bpForm=document.createElement('div');bpForm.style.cssText='padding:12px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px;';
+    var bpti=document.createElement('input');bpti.className='add-input';bpti.placeholder='Event or task...';bpti.id='bp-title';
+    var bpni=document.createElement('input');bpni.className='add-input';bpni.placeholder='Prep notes...';bpni.id='bp-note';
+    var bpb=document.createElement('button');bpb.className='confirm-btn';bpb.textContent='Save';
+    function doAddBP(){
+      var t=document.getElementById('bp-title');var n=document.getElementById('bp-note');
+      var tv=t?t.value.trim():'';if(!tv)return;
+      s.bp.push({id:Date.now(),title:tv,note:n?n.value.trim():'',done:false});
+      sv(KEYS.bp,s.bp);s.showAddBP=false;render();
+    }
+    bpb.addEventListener('click',doAddBP);bpni.addEventListener('keydown',function(ev){if(ev.key==='Enter')doAddBP();});
+    bpForm.appendChild(bpti);bpForm.appendChild(bpni);bpForm.appendChild(bpb);bpwc.appendChild(bpForm);
   }
-
-  if (!bp.length) html += `<div style="padding:14px 16px;font-size:13px;color:var(--text3)">Nothing added yet.</div>`;
-
-  bp.forEach(item => {
-    html += `
-    <div class="coming-row ${item.done?'done':''}" onclick="toggleBP(${item.id})">
-      <div class="small-circle ${item.done?'done':''}">
-        ${item.done ? `<svg width="8" height="8" viewBox="0 0 10 10" fill="none"><polyline points="1.5,5 4,7.5 8.5,2.5" stroke="var(--text3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ''}
-      </div>
-      <div style="flex:1">
-        <div class="coming-title">${item.title}</div>
-        ${item.note && !item.done ? `<div class="coming-note">${item.note}</div>` : ''}
-      </div>
-      <button class="remove-btn" onclick="event.stopPropagation();removeBP(${item.id})">✕</button>
-    </div>`;
+  if(!s.bp.length){var empty=document.createElement('div');empty.style.cssText='padding:14px 16px;font-size:13px;color:var(--text3);';empty.textContent='Nothing added yet.';bpwc.appendChild(empty);}
+  s.bp.forEach(function(item){
+    var cr=document.createElement('div');cr.className='coming-row'+(item.done?' done':'');
+    var sc=document.createElement('div');sc.className='small-circle'+(item.done?' done':'');
+    if(item.done){
+      var csv=document.createElementNS('http://www.w3.org/2000/svg','svg');csv.setAttribute('width','8');csv.setAttribute('height','8');csv.setAttribute('viewBox','0 0 10 10');csv.setAttribute('fill','none');
+      var csp=document.createElementNS('http://www.w3.org/2000/svg','polyline');csp.setAttribute('points','1.5,5 4,7.5 8.5,2.5');csp.setAttribute('stroke','var(--text3)');csp.setAttribute('stroke-width','1.8');csp.setAttribute('stroke-linecap','round');csv.appendChild(csp);sc.appendChild(csv);
+    }
+    var ctxt=document.createElement('div');ctxt.style.flex='1';
+    var ctitle=document.createElement('div');ctitle.className='coming-title';ctitle.textContent=item.title;
+    ctxt.appendChild(ctitle);
+    if(item.note&&!item.done){var cnote=document.createElement('div');cnote.className='coming-note';cnote.textContent=item.note;ctxt.appendChild(cnote);}
+    var crb=document.createElement('button');crb.className='remove-btn';crb.textContent='\u2715';
+    crb.addEventListener('click',(function(id){return function(ev){ev.stopPropagation();s.bp=s.bp.filter(function(i){return i.id!==id;});sv(KEYS.bp,s.bp);render();};})(item.id));
+    cr.appendChild(sc);cr.appendChild(ctxt);cr.appendChild(crb);
+    cr.addEventListener('click',(function(id){return function(){s.bp=s.bp.map(function(i){return i.id===id?Object.assign({},i,{done:!i.done}):i;});sv(KEYS.bp,s.bp);render();};})(item.id));
+    bpwc.appendChild(cr);
   });
-  html += `</div></div>`;
+  bpSection.appendChild(bpwc);root.appendChild(bpSection);
 
-  document.getElementById('app').innerHTML = html;
-
-  // Focus add inputs after render
-  if (addingSection) { const el = document.getElementById(`add-${addingSection}`); if(el) el.focus(); }
-  if (state.showAddTask) { const el = document.getElementById('add-task'); if(el) el.focus(); }
-  if (state.showAddWeekly) { const el = document.getElementById('add-weekly'); if(el) el.focus(); }
-  if (state.showAddBP) { const el = document.getElementById('add-bp-title'); if(el) el.focus(); }
+  // Focus
+  setTimeout(function(){
+    var f=document.getElementById('add-'+s.addingSection)||document.getElementById('add-task')||document.getElementById('add-weekly')||document.getElementById('bp-title');
+    if(f)f.focus();
+  },50);
 }
-
-// Actions
-function toggleCheck(id) {
-  state.checks[id] = !state.checks[id];
-  sv(KEYS.checks, state.checks); render();
-}
-function toggleGroup(gid) {
-  state.expandedGroups[gid] = !state.expandedGroups[gid]; render();
-}
-function toggleEdit() { state.editMode = !state.editMode; state.addingSection = null; render(); }
-function toggleAddSection(sec) { state.addingSection = state.addingSection === sec ? null : sec; render(); }
-function toggleAddWeekly() { state.showAddWeekly = !state.showAddWeekly; render(); }
-function toggleAddBP() { state.showAddBP = !state.showAddBP; render(); }
-function toggleAddTask() { state.showAddTask = !state.showAddTask; render(); }
-
-function addItem(sec) {
-  const el = document.getElementById(`add-${sec}`);
-  const v = el ? el.value.trim() : '';
-  if (!v) return;
-  state.items[sec].push({ id: `${sec}-${Date.now()}`, label: v });
-  sv(KEYS.items, state.items); state.addingSection = null; render();
-}
-function removeItem(sec, id) {
-  state.items[sec] = state.items[sec].filter(it => it.id !== id);
-  sv(KEYS.items, state.items); render();
-}
-
-function toggleWeekly(i) {
-  state.wChecks[i] = !state.wChecks[i];
-  sv(KEYS.wChecks, state.wChecks); render();
-}
-function addWeekly() {
-  const el = document.getElementById('add-weekly');
-  const v = el ? el.value.trim() : '';
-  if (!v) return;
-  state.wItems.push(v); sv(KEYS.wItems, state.wItems);
-  state.showAddWeekly = false; render();
-}
-function removeWeekly(i) {
-  state.wItems.splice(i, 1); sv(KEYS.wItems, state.wItems); render();
-}
-
-function toggleTask(id) {
-  state.tasks = state.tasks.map(t => t.id === id ? { ...t, done: !t.done } : t);
-  sv(KEYS.tasks, state.tasks); render();
-}
-function addTask() {
-  const el = document.getElementById('add-task');
-  const v = el ? el.value.trim() : '';
-  if (!v) return;
-  state.tasks.push({ id: `t-${Date.now()}`, label: v, done: false });
-  sv(KEYS.tasks, state.tasks); state.showAddTask = false; render();
-}
-function removeTask(id) {
-  state.tasks = state.tasks.filter(t => t.id !== id);
-  sv(KEYS.tasks, state.tasks); render();
-}
-
-function toggleBP(id) {
-  state.bp = state.bp.map(i => i.id === id ? { ...i, done: !i.done } : i);
-  sv(KEYS.bp, state.bp); render();
-}
-function addBP() {
-  const title = (document.getElementById('add-bp-title') || {}).value?.trim();
-  const note = (document.getElementById('add-bp-note') || {}).value?.trim();
-  if (!title) return;
-  state.bp.push({ id: Date.now(), title, note: note || '', done: false });
-  sv(KEYS.bp, state.bp); state.showAddBP = false; render();
-}
-function removeBP(id) {
-  state.bp = state.bp.filter(i => i.id !== id);
-  sv(KEYS.bp, state.bp); render();
-}
-
-function resetAll() {
-  if (!confirm('Reset everything to defaults?')) return;
-  Object.values(KEYS).forEach(k => localStorage.removeItem(k));
-  location.reload();
-}
-
-// Drag
-let dragFrom = null;
-function dragStart(i) { dragFrom = i; }
-function dragEnter(i) {
-  if (dragFrom === null || dragFrom === i) return;
-  const arr = [...state.tasks];
-  const el = arr.splice(dragFrom, 1)[0];
-  arr.splice(i, 0, el);
-  dragFrom = i;
-  state.tasks = arr; render();
-}
-function dragEnd() { dragFrom = null; sv(KEYS.tasks, state.tasks); render(); }
 
 render();
 </script>
